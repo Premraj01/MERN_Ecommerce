@@ -1,6 +1,6 @@
 /** @format */
 
-import mongoose, { mongo } from 'mongoose'
+import mongoose from 'mongoose'
 
 const reviewSchema = mongoose.Schema(
   {
@@ -49,7 +49,7 @@ const productSchema = mongoose.Schema(
     rating: [reviewSchema],
 
     rating: {
-      type: Numnber,
+      type: Number,
       required: true,
       default: 0,
     },
