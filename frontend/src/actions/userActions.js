@@ -11,6 +11,7 @@ import {
   USER_UPDATE_REQUEST,
   USER_UPDATE_SUCCESS,
   USER_UPDATE_FAIL,
+  USER_DETAILS_RESET,
 } from '../constants/userConstants'
 
 import {
@@ -18,6 +19,7 @@ import {
   USER_REGISTER_SUCCESS,
   USER_REGISTER_FAIL,
 } from '../constants/userConstants'
+import { ORDER_LIST_MY_RESET } from '../constants/orderConstants'
 
 export const register = (fname, lname, email, password) => async (dispatch) => {
   try {
@@ -148,8 +150,6 @@ export const getUserDetails = (id) => async (dispatch, getState) => {
 
     const { data } = await axios.get(`/api/users/${id}`, config)
 
-    console.log('data', data)
-
     dispatch({
       type: USER_DETAILS_SUCCESS,
       payload: data,
@@ -168,4 +168,6 @@ export const getUserDetails = (id) => async (dispatch, getState) => {
 export const logout = () => (dispatch) => {
   localStorage.removeItem('userInfo')
   dispatch({ type: USER_LOGOUT })
+  dispatch({ type: USER_DETAILS_RESET })
+  dispatch({ type: ORDER_LIST_MY_RESET })
 }
