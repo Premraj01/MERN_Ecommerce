@@ -45,7 +45,7 @@ const PlaceOrderScreen = ({ history }) => {
   const PlaceOrderHandler = () => {
     dispatch(
       createOrder({
-        orderItems: cart.orderItems,
+        orderItems: cart.cartItems,
         shippingAddress: cart.shippingAddress,
         paymentMethod: cart.paymentMethod,
         itemPrice: cart.itemPrice,
@@ -137,12 +137,12 @@ const PlaceOrderScreen = ({ history }) => {
                 <Row>
                   <Col>
                     <h5>
-                      <storng>Total</storng>
+                      <strong>Total</strong>
                     </h5>
                   </Col>
                   <Col>
                     <h5>
-                      <storng>${cart.totalPrice}</storng>
+                      <strong>${cart.totalPrice}</strong>
                     </h5>
                   </Col>
                 </Row>

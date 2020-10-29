@@ -14,7 +14,7 @@ const ShippingScreen = ({ history }) => {
 
   const [address, setAddress] = useState(shippingAddress.address)
   const [city, setCity] = useState(shippingAddress.city)
-  const [postalCode, setPostsalCode] = useState(shippingAddress.setPostsalCode)
+  const [postalCode, setPostalCode] = useState(shippingAddress.postalCode)
   const [country, setCountry] = useState(shippingAddress.country)
 
   const dispatch = useDispatch()
@@ -56,7 +56,7 @@ const ShippingScreen = ({ history }) => {
             value={postalCode}
             maxLength='6'
             required
-            onChange={(e) => setPostsalCode(e.target.value)}></Form.Control>
+            onChange={(e) => setPostalCode(e.target.value)}></Form.Control>
         </Form.Group>
         <Form.Group controlId='country'>
           <Form.Label>Country</Form.Label>
