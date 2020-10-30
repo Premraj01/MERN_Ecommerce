@@ -7,11 +7,12 @@ import { Navbar, Nav, Container, NavDropdown } from 'react-bootstrap'
 import { FaOpencart, FaUserAlt } from 'react-icons/fa'
 import { logout } from '../actions/userActions'
 
-const Header = () => {
+const Header = ({ history }) => {
   const dispatch = useDispatch()
 
   const userLogin = useSelector((state) => state.userLogin)
   const { userInfo } = userLogin
+
   const logoutHandler = () => {
     dispatch(logout())
   }
@@ -51,6 +52,19 @@ const Header = () => {
                     &nbsp; Sign In
                   </Nav.Link>
                 </LinkContainer>
+              )}
+              {userInfo && userInfo.isAdmin && (
+                <NavDropdown title='Admin' id='adminmenu'>
+                  <LinkContainer to='/admin/userlist'>
+                    <NavDropdown.Item> Users</NavDropdown.Item>
+                  </LinkContainer>
+                  <LinkContainer to='/admin/productlist'>
+                    <NavDropdown.Item> Product List</NavDropdown.Item>
+                  </LinkContainer>
+                  <LinkContainer to='/admin/orderlist'>
+                    <NavDropdown.Item> order List</NavDropdown.Item>
+                  </LinkContainer>
+                </NavDropdown>
               )}
             </Nav>
           </Navbar.Collapse>
