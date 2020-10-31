@@ -118,7 +118,7 @@ export const userDeleteReducer = (state = {}, action) => {
   }
 }
 
-export const userUpdateAdminReducer = (state = { user: {} }, action) => {
+export const userUpdateAdminReducer = (state = {}, action) => {
   switch (action.type) {
     case USER_UPDATE_ADMIN_REQUEST:
       return { loading: true }
