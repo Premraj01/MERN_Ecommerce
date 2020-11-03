@@ -55,7 +55,6 @@ const ProductScreen = ({ history, match }) => {
       })
     )
   }
-  console.log(product.reviews)
   return (
     <>
       <Link className='btn btn-light my-3' to='/'>
@@ -156,7 +155,7 @@ const ProductScreen = ({ history, match }) => {
                       {review.fname} {review.lname}
                     </strong>
                     <Rating value={review.rating} />
-                    <p>{review.createdAt}</p>
+                    <p>{review.createdAt.substring(0,10)}</p>
                     <p>{review.comment}</p>
                   </ListGroup.Item>
                 ))}

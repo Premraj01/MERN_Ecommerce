@@ -8,9 +8,24 @@ import Product from '../models/productModel.js'
 //@access Public
 
 const getProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({})
+  const pageSize = 10
+  const page = Number(req.query.pageNumber) || 1
 
-  res.json(products)
+  const keyword = req.query.keyword
+    ? {
+        name: {
+          $regex: req.query.keyword,
+          $options: 'i',
+        },
+      }
+    : {}
+
+  const count = await Product.countDocuments({ ...keyword })
+  const products = await Product.find({ ...keyword })
+    .limit(pageSize)
+    .skip(pageSize * (page - 1))
+
+  res.json({ products, page, pages: Math.ceil(count / pageSize) })
 })
 
 //@desc Fetch single products
@@ -126,8 +141,6 @@ const createProductReview = asyncHandler(async (req, res) => {
       user: req.user._id,
     }
 
-    console.log(review)
-
     product.reviews.push(review)
 
     product.numReviews = product.reviews.length
@@ -144,6 +157,16 @@ const createProductReview = asyncHandler(async (req, res) => {
   }
 })
 
+//@desc Get top rated products
+//@route GET /api/products/top
+//@access Public
+
+const getTopProducts = asyncHandler(async (req, res) => {
+  const products = await Product.find({}).sort({ rating: -1 }).limit(3)
+
+  res.json(products)
+})
+
 export {
   getProductById,
   getProducts,
@@ -151,4 +174,5 @@ export {
   createProduct,
   updateProduct,
   createProductReview,
+  getTopProducts,
 }
