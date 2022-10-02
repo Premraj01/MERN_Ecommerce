@@ -24,6 +24,7 @@
 	"homepage": "https://github.com/Premraj01/MERN_Ecommerce#readme",
 	"dependencies": {
 		"api": "^4.5.2",
+		"axios": "^0.27.2",
 		"bcryptjs": "^2.4.3",
 		"dotenv": "^8.2.0",
 		"express": "^4.17.1",

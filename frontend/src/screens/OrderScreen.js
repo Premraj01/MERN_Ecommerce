@@ -3,7 +3,17 @@
 import React, { useState, useEffect, Fragment } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import { Button, Row, Col, ListGroup, Image, Card } from "react-bootstrap";
+import {
+	Button,
+	Row,
+	Col,
+	ListGroup,
+	Image,
+	Card,
+	Form,
+	Stack,
+	Container,
+} from "react-bootstrap";
 import { useDispatch, useSelector } from "react-redux";
 import { PayPalButton } from "react-paypal-button-v2";
 import Message from "../components/Message";
@@ -14,7 +24,13 @@ import {
 	ORDER_DELIVER_RESET,
 } from "../constants/orderConstants";
 import ReactModal from "react-modal";
-import { BallTriangle } from "react-loader-spinner";
+import { NEXIO_CONSTANTS } from "../constants/nexioConstants";
+import {
+	getUserDetails,
+	update,
+	updateUserAdmin,
+} from "../actions/userActions";
+import FormContainder from "../components/FormContainder";
 
 const OrderScreen = ({ match, history }) => {
 	const orderId = match.params.id;
@@ -30,11 +46,18 @@ const OrderScreen = ({ match, history }) => {
 	};
 
 	const [sdkReady, setSdkReady] = useState(false);
+	const [month, setMonth] = useState(3);
+	const [card, setCard] = useState({});
+	const [action, setAction] = useState("");
 	const [isOpenModal, setIsOpenModal] = useState(false);
 	const [url, setUrl] = useState("");
 	const [loader, setLoader] = useState(false);
+	const [token, setToken] = useState("");
 
 	const dispatch = useDispatch();
+
+	const userDetails = useSelector((state) => state.userDetails);
+	const { user } = userDetails;
 
 	const orderDetails = useSelector((state) => state.orderDetails);
 	const { loading, error, order } = orderDetails;
@@ -48,19 +71,8 @@ const OrderScreen = ({ match, history }) => {
 	const orderDeliver = useSelector((state) => state.orderDeliver);
 	const { loading: loadingDeliver, success: successDeliver } = orderDeliver;
 
-	// if (!loading) {
-	// 	// Calculate Prices
-	// 	const addDecimals = (num) => {
-	// 		return Math.round((num * 100) / 100).toFixed(2);
-	// 	};
-
-	// 	order.itemsPrice = addDecimals(
-	// 		order.orderItems.reduce((acc, item) => acc + item.price * item.qty, 0),
-	// 	);
-	// }
-
 	window.addEventListener("message", function messageListener(event) {
-		if (event.origin === "https://api.nexiopaysandbox.com") {
+		if (event.origin === NEXIO_CONSTANTS.URL) {
 			const eventData = event.data?.data;
 			const eventType = event.data?.event;
 			setLoader(true);
@@ -80,92 +92,257 @@ const OrderScreen = ({ match, history }) => {
 				successPaymentHandler(eventData);
 				console.log("transaction successfully..!");
 			}
+
+			if (eventType === "eCheckProcessed") {
+				setLoader(false);
+				setIsOpenModal(false);
+				console.log("changes", eventData);
+				successPaymentHandler({
+					...eventData,
+					kountResponse: {
+						status: "success",
+					},
+				});
+				console.log("transaction successfully..!");
+			}
+
+			if (eventType === "cardSaved") {
+				setLoader(false);
+				setIsOpenModal(false);
+				if (eventData.token.token.length > 0) {
+					dispatch(
+						update({
+							...userInfo,
+							savedCardToken: eventData.token.token,
+						}),
+					);
+				}
+			}
+
+			if (eventType === "eCheckSaved") {
+				setLoader(false);
+				setIsOpenModal(false);
+				if (eventData.token.token.length > 0) {
+					dispatch(
+						update({
+							...userInfo,
+							savedEcheckToken: eventData.token.token,
+						}),
+					);
+				}
+			}
 		}
 	});
 
 	useEffect(() => {
+		dispatch(getUserDetails("profile"));
 		if (!userInfo) {
 			history.push("/login");
 		}
-
-		// const addPayPalScript = async () => {
-		// 	const { data: clientId } = await axios.get("/api/config/paypal");
-		// 	const script = document.createElement("script");
-		// 	script.type = "text/javascript";
-		// 	script.src = `https://www.paypal.com/sdk/js?client-id=${clientId}`;
-
-		// 	script.async = true;
-		// 	script.onload = () => {
-		// 		setSdkReady(true);
-		// 	};
-		// 	document.body.appendChild(script);
-		// };
-
-		const addNexioScript = async () => {
-			// const { data: oneTimeToken } = await axios.get("/api/config/nexio");
-
-			// console.log("clientID", oneTimeToken);
-			// const { data: client } = await axios.get("/api/config/nexio");
-			// console.log("clientID", client);
-
-			const { data } = await axios.post("/api/config/nexio", order);
-
-			if (data) {
-				setSdkReady(true);
-				var iframeBaseUrl = "https://api.nexiopaysandbox.com/pay/v3";
-				var oneTimeUseToken = "?token=" + data.token;
-				var returnHtml = "&shouldReturnHtml=false";
-				setUrl(iframeBaseUrl + oneTimeUseToken + returnHtml);
-			}
-
-			// fetch("https://api.nexiopaysandbox.com/pay/v3/token", options)
-			// 	.then((response) => response.json())
-			// 	.then((response) => console.log(response))
-			// 	.catch((err) => console.error(err));
-
-			// const script = document.createElement("script");
-			// script.type = "text/javascript";
-			// const url = "https://api.nexiopaysandbox.com/pay/v3";
-			// script.url = url.match(/^http(s?):\/\/.*?(?=\/)/)[0];
-			// window.addEventListener("message", function messageListener(event) {
-			// 	if (event.origin === iframeDomain) {
-			// 		console.log("received message", event.data);
-			// 		if (event.data.event === "loaded") {
-			// 			window.document.getElementById("iframe1").style.display = "block";
-			// 			window.document.getElementById("loader").style.display = "none";
-			// 		}
-			// 		if (event.data.event === "processed") {
-			// 			console.log("processed", event.data.data);
-			// 			var jsonStr = JSON.stringify(event.data.data, null, 1);
-			// 			window.document.getElementById("forms-container").innerHTML =
-			// 				"<p>Successfully Processed Credit Card Transaction.</p><code><br/><code>" +
-			// 				jsonStr +
-			// 				"</code>";
-			// 		}
-			// 	}
-			// });
-			// document.body.appendChild(script);
-		};
 
 		if (!order || successPay || successDeliver) {
 			dispatch({ type: ORDER_PAY_RESET });
 			dispatch({ type: ORDER_DELIVER_RESET });
 			dispatch(getOrder(orderId));
 		} else if (!order.isPaid) {
-			// if (!window.paypal) {
-			// addPayPalScript();
-			addNexioScript();
-			// } else {
-			// 	setSdkReady(true);
+			// if (action === NEXIO_CONSTANTS.PAYMENT) {
+			// 	getIframeForPayment();
+			// } else if (action === NEXIO_CONSTANTS.SAVE_CARD) {
+			// 	getIframeForSaveCard();
 			// }
 		}
 	}, [dispatch, orderId, order, successPay, successDeliver, history, userInfo]);
+
+	const startRecurringPayment = async () => {
+		// const paymentBody =  {
+		// 	data: {
+		// 	  amount: 19.99,
+		// 	  "currency": "USD",
+		// 	  "customer": {
+		// 		"customerRef": "RP006"
+		// 	  }
+		// 	},
+		// 	"tokenex": {
+		// 	  "token": "6ee140a0-05d1-4958-8325-b38a690dbb9d"
+		// 	}
+		//   },
+		//   "schedule": {
+		// 	"interval": "week",
+		// 	"intervalCount": 2
+		//   }
+		// }'
+		console.log(user);
+		const config = {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		};
+		const { data } = await axios.post(
+			"/api/config/nexio/recurring/pay",
+			{
+				token: user.savedCardToken,
+				id: user._id,
+				totalPrice: order.totalPrice,
+				month: month,
+			},
+			config,
+		);
+		if (data) {
+			console.log("data", data);
+			setIsOpenModal(false);
+			// successPaymentHandler(data);
+		}
+	};
+	const getRecurringPaymentForm = () => {
+		savedCardsModal();
+		setAction(NEXIO_CONSTANTS.RECURRING_PAYMENT);
+		setIsOpenModal(true);
+	};
+
+	const getIframeForPayment = async () => {
+		const config = {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		};
+
+		const { data } = await axios.post(
+			"/api/config/nexio/card-iframe",
+			order,
+			config,
+		);
+
+		if (data) {
+			setSdkReady(true);
+			setUrl(data);
+			setAction(NEXIO_CONSTANTS.PAYMENT);
+			openModal();
+		}
+	};
+
+	const getIframeForSaveCard = async () => {
+		const { data } = await axios.get("/api/config/nexio/save-card-iframe");
+
+		if (data) {
+			console.log(data);
+			setSdkReady(true);
+			setUrl(data);
+
+			setAction(NEXIO_CONSTANTS.SAVE_CARD);
+			openModal();
+		}
+	};
+
+	const savedCardsModal = async () => {
+		const config = {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		};
+
+		setAction(NEXIO_CONSTANTS.PAY_WITH_SAVE_CARD);
+
+		const { data } = await axios.post(
+			"/api/config/nexio/saved-card/view",
+			{ token: user.savedCardToken },
+			config,
+		);
+		if (data) {
+			console.log(data);
+			setCard({ ...data });
+			openModal();
+		}
+		console.log("data", data);
+	};
+
+	const savedEchecksPayment = async () => {
+		const config = {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		};
+
+		setAction(NEXIO_CONSTANTS.PAY_WITH_SAVE_ECHECK);
+
+		console.log("ress");
+		const { data } = await axios.post(
+			"/api/config/nexio/save-echeck/pay",
+			{ token: user.savedEcheckToken },
+			config,
+		);
+		if (data) {
+			setLoader(false);
+			setIsOpenModal(false);
+			successPaymentHandler({
+				...data,
+				kountResponse: {
+					status: "success",
+				},
+			});
+		}
+		console.log("data", data);
+	};
+
+	const payWithSavedCard = async () => {
+		const config = {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		};
+		const { data } = await axios.post(
+			"/api/config/nexio/save-card/pay",
+			{ token: user.savedCardToken },
+			config,
+		);
+		if (data) {
+			console.log(data);
+			setIsOpenModal(false);
+			successPaymentHandler(data);
+		}
+	};
+
+	const getIframeForECheck = async () => {
+		const config = {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		};
+
+		const { data } = await axios.post(
+			"/api/config/nexio/e-check",
+			order,
+			config,
+		);
+
+		if (data) {
+			setSdkReady(true);
+			setUrl(data);
+			setAction(NEXIO_CONSTANTS.ECHECK);
+			openModal();
+		}
+	};
+
+	const getIframeForSaveEcheck = async () => {
+		const { data } = await axios.get("/api/config/nexio/save-echeck");
+		if (data) {
+			console.log(data);
+			setSdkReady(true);
+			setUrl(data);
+
+			setAction(NEXIO_CONSTANTS.SAVE_ECHECK);
+			openModal();
+		}
+	};
 
 	const successPaymentHandler = (paymentResult) => {
 		dispatch(payOrder(orderId, paymentResult));
 	};
 
-	const openModal = () => {
+	const openModal = async () => {
+		console.log(token);
+		if (action === NEXIO_CONSTANTS.PAYMENT) {
+		} else {
+		}
 		setIsOpenModal(true);
 	};
 
@@ -300,24 +477,75 @@ const OrderScreen = ({ match, history }) => {
 
 							{!order.isPaid && (
 								<ListGroup.Item>
-									{loadingPay && <Loader />}
-									{!sdkReady ? (
-										<Loader />
-									) : (
+									{/* {loadingPay && <Loader />} */}
+									{
 										// <PayPalButton
 										// 	amount={order.totalPrice}
 										// 	onSuccess={successPaymentHandler}
 										// />
 										<Fragment>
-											<Button type='button' className='btn btn-block round'>
-												Nexio
+											<Button
+												type='button'
+												className='btn btn-block'
+												onClick={getRecurringPaymentForm}>
+												Recurring Payment
+											</Button>
+											<hr />
+											<Container>
+												<Row className='justify-content-md-center'>
+													<Col cs={12} md={6}>
+														<h4>Cards</h4>
+													</Col>
+												</Row>
+											</Container>
+											<Button
+												type='button'
+												className='btn btn-block'
+												onClick={getIframeForPayment}>
+												Debit or Credit Card
 											</Button>
 											<Button
 												type='button'
 												className='btn btn-block'
-												onClick={openModal}>
-												Debit and Credit Card
+												onClick={getIframeForSaveCard}>
+												Save Debit or Credit Card
 											</Button>
+											<Button
+												type='button'
+												className='btn btn-block'
+												onClick={savedCardsModal}>
+												Pay with saved card
+											</Button>
+											<hr />
+											<Container>
+												<Row className='justify-content-md-center'>
+													<Col cs={12} md={6}>
+														<h4>E-Check</h4>
+													</Col>
+												</Row>
+											</Container>
+											<Button
+												type='button'
+												className='btn btn-block'
+												variant='outline-dark'
+												onClick={getIframeForECheck}>
+												Pay with E-check
+											</Button>
+											<Button
+												type='button'
+												className='btn btn-block'
+												variant='outline-dark'
+												onClick={getIframeForSaveEcheck}>
+												Save the E-check
+											</Button>
+											<Button
+												type='button'
+												className='btn btn-block'
+												variant='outline-dark'
+												onClick={savedEchecksPayment}>
+												Pay with Saved the E-check
+											</Button>
+
 											<ReactModal
 												isOpen={isOpenModal}
 												onAfterOpen={afterOpenModal}
@@ -335,10 +563,122 @@ const OrderScreen = ({ match, history }) => {
 													</Col>
 												</Row>
 
-												<iframe id='myIframe' src={url}></iframe>
+												<hr />
+
+												{action === NEXIO_CONSTANTS.PAY_WITH_SAVE_CARD ? (
+													<Fragment>
+														<Form>
+															{/* <Form.Group controlId='card'>
+																<Form.Label>Card</Form.Label>
+																<Text
+																	type='card'
+																	placeholder='Enter the Email'
+																	value={email}
+																	onChange={(e) =>
+																		setEmail(e.target.value)
+																	}></Text>
+															</Form.Group> */}
+															<hr />
+															<h5>Card</h5>
+															<h6>**** {card?.tokenex?.lastFour}</h6>
+
+															<Form.Group controlId='CVV'>
+																<Form.Label>CVV</Form.Label>
+																<Form.Control
+																	type='CVV'
+																	placeholder='Enter the CVV'></Form.Control>
+															</Form.Group>
+														</Form>
+														<Button
+															type='submit'
+															variant='primary'
+															onClick={payWithSavedCard}>
+															Pay
+														</Button>
+													</Fragment>
+												) : action === NEXIO_CONSTANTS.PAY_WITH_SAVE_ECHECK ? (
+													<Fragment>
+														<Form>
+															{/* <Form.Group controlId='card'>
+																<Form.Label>Card</Form.Label>
+																<Text
+																	type='card'
+																	placeholder='Enter the Email'
+																	value={email}
+																	onChange={(e) =>
+																		setEmail(e.target.value)
+																	}></Text>
+															</Form.Group> */}
+															<hr />
+															<h5>Card</h5>
+															<h6>**** {card?.tokenex?.lastFour}</h6>
+															<hr />
+															<Form.Group controlId='CVV'>
+																<Form.Label>CVV</Form.Label>
+																<Form.Control
+																	type='CVV'
+																	placeholder='Enter the CVV'></Form.Control>
+															</Form.Group>
+														</Form>
+														<Button
+															type='submit'
+															variant='primary'
+															onClick={payWithSavedCard}>
+															Login
+														</Button>
+													</Fragment>
+												) : action === NEXIO_CONSTANTS.RECURRING_PAYMENT ? (
+													<Fragment>
+														<Form>
+															<h5>Start a Recurring Payment</h5>
+															<hr />
+															<Form.Group controlId='CVV'>
+																<Form.Label>
+																	**** {card?.tokenex?.lastFour}
+																</Form.Label>
+																<Form.Control
+																	type='CVV'
+																	placeholder='Enter the CVV'></Form.Control>
+															</Form.Group>
+															<hr />
+															<Form.Group controlId='recurring'>
+																<Form.Label>
+																	Choose Interval(in months)
+																</Form.Label>
+																<div>
+																	<Form.Control
+																		as='select'
+																		value={month}
+																		onChange={(e) => setMonth(e.target.value)}>
+																		<option key={3} value={3}>
+																			3
+																		</option>
+																		<option key={6} value={6}>
+																			6
+																		</option>
+																		<option key={9} value={9}>
+																			9
+																		</option>
+																		<option key={12} value={12}>
+																			12
+																		</option>
+																	</Form.Control>
+																</div>
+															</Form.Group>
+														</Form>
+														<Button
+															type='submit'
+															variant='primary'
+															onClick={startRecurringPayment}>
+															Start Recurring payment
+														</Button>
+													</Fragment>
+												) : (
+													<iframe id='myIframe' src={url}></iframe>
+												)}
 											</ReactModal>
 										</Fragment>
-									)}
+									}
 								</ListGroup.Item>
 							)}
 							{loadingDeliver && <Loader />}
