@@ -331,7 +331,7 @@ app.post("/api/config/nexio/save-echeck/pay", async (req, res) => {
 				),
 		},
 		body: JSON.stringify({
-			data: { currency: "USD", amount: 125 },
+			data: { currency: "USD" },
 			tokenex: {
 				token: req.body.token,
 			},

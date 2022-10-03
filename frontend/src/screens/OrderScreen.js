@@ -53,6 +53,8 @@ const OrderScreen = ({ match, history }) => {
 	const [url, setUrl] = useState("");
 	const [loader, setLoader] = useState(false);
 	const [token, setToken] = useState("");
+	const [variant, setVariant] = useState("");
+	const [message, setMessage] = useState("");
 
 	const dispatch = useDispatch();
 
@@ -82,6 +84,9 @@ const OrderScreen = ({ match, history }) => {
 			}
 
 			if (eventType === "error") {
+				setIsOpenModal(false);
+				setVariant("danger");
+				setMessage(`${eventData.error}:${eventData.message}`);
 				console.log("error", eventData);
 			}
 
@@ -89,6 +94,8 @@ const OrderScreen = ({ match, history }) => {
 				setLoader(false);
 				setIsOpenModal(false);
 				console.log("changes", eventData);
+				setVariant("success");
+				setMessage(`Payment successful..!!`);
 				successPaymentHandler(eventData);
 				console.log("transaction successfully..!");
 			}
@@ -97,6 +104,8 @@ const OrderScreen = ({ match, history }) => {
 				setLoader(false);
 				setIsOpenModal(false);
 				console.log("changes", eventData);
+				setVariant("success");
+				setMessage(`Payment successful..!!`);
 				successPaymentHandler({
 					...eventData,
 					kountResponse: {
@@ -109,7 +118,10 @@ const OrderScreen = ({ match, history }) => {
 			if (eventType === "cardSaved") {
 				setLoader(false);
 				setIsOpenModal(false);
+
 				if (eventData.token.token.length > 0) {
+					setVariant("success");
+					setMessage(`Your Card is saved for future use..!!`);
 					dispatch(
 						update({
 							...userInfo,
@@ -122,7 +134,10 @@ const OrderScreen = ({ match, history }) => {
 			if (eventType === "eCheckSaved") {
 				setLoader(false);
 				setIsOpenModal(false);
+
 				if (eventData.token.token.length > 0) {
+					setVariant("success");
+					setMessage(`Your eCheck is saved for future use..!!`);
 					dispatch(
 						update({
 							...userInfo,
@@ -154,24 +169,6 @@ const OrderScreen = ({ match, history }) => {
 	}, [dispatch, orderId, order, successPay, successDeliver, history, userInfo]);
 
 	const startRecurringPayment = async () => {
-		// const paymentBody =  {
-		// 	data: {
-		// 	  amount: 19.99,
-		// 	  "currency": "USD",
-		// 	  "customer": {
-		// 		"customerRef": "RP006"
-		// 	  }
-		// 	},
-		// 	"tokenex": {
-		// 	  "token": "6ee140a0-05d1-4958-8325-b38a690dbb9d"
-		// 	}
-		//   },
-		//   "schedule": {
-		// 	"interval": "week",
-		// 	"intervalCount": 2
-		//   }
-		// }'
-		console.log(user);
 		const config = {
 			headers: {
 				"Content-Type": "application/json",
@@ -187,11 +184,8 @@ const OrderScreen = ({ match, history }) => {
 			},
 			config,
 		);
-		if (data) {
-			console.log("data", data);
-			setIsOpenModal(false);
-			// successPaymentHandler(data);
-		}
+
+		isError(data);
 	};
 	const getRecurringPaymentForm = () => {
 		savedCardsModal();
@@ -255,7 +249,7 @@ const OrderScreen = ({ match, history }) => {
 		console.log("data", data);
 	};
 
-	const savedEchecksPayment = async () => {
+	const payWithSavedEcheck = async () => {
 		const config = {
 			headers: {
 				"Content-Type": "application/json",
@@ -270,17 +264,8 @@ const OrderScreen = ({ match, history }) => {
 			{ token: user.savedEcheckToken },
 			config,
 		);
-		if (data) {
-			setLoader(false);
-			setIsOpenModal(false);
-			successPaymentHandler({
-				...data,
-				kountResponse: {
-					status: "success",
-				},
-			});
-		}
-		console.log("data", data);
+
+		isError(data);
 	};
 
 	const payWithSavedCard = async () => {
@@ -294,11 +279,7 @@ const OrderScreen = ({ match, history }) => {
 			{ token: user.savedCardToken },
 			config,
 		);
-		if (data) {
-			console.log(data);
-			setIsOpenModal(false);
-			successPaymentHandler(data);
-		}
+		isError(data);
 	};
 
 	const getIframeForECheck = async () => {
@@ -356,6 +337,25 @@ const OrderScreen = ({ match, history }) => {
 		dispatch(deliverOrder(order));
 	};
 
+	const isError = (data) => {
+		if (JSON.stringify(data).includes("error")) {
+			setVariant("danger");
+			setMessage(`${data.message}`);
+			setIsOpenModal(false);
+			console.log(data);
+		} else {
+			setIsOpenModal(false);
+			setVariant("success");
+			setMessage(`Payment Successful..!`);
+			successPaymentHandler({
+				...data,
+				kountResponse: {
+					status: "success",
+				},
+			});
+		}
+	};
+
 	return loading ? (
 		<Loader />
 	) : error ? (
@@ -363,6 +363,7 @@ const OrderScreen = ({ match, history }) => {
 	) : (
 		<>
 			<h1>Order {order._id}</h1>
+			<Message variant={variant}>{message}</Message>
 			<Row>
 				<Col md={8}>
 					<ListGroup variant='flush'>
@@ -542,7 +543,7 @@ const OrderScreen = ({ match, history }) => {
 												type='button'
 												className='btn btn-block'
 												variant='outline-dark'
-												onClick={savedEchecksPayment}>
+												onClick={payWithSavedEcheck}>
 												Pay with Saved the E-check
 											</Button>
 
