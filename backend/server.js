@@ -331,7 +331,7 @@ app.post("/api/config/nexio/save-echeck/pay", async (req, res) => {
 				),
 		},
 		body: JSON.stringify({
-			data: { currency: "USD" },
+			data: { currency: "USD", amount: 125 },
 			tokenex: {
 				token: req.body.token,
 			},
@@ -359,6 +359,7 @@ app.post("/api/config/nexio/save-echeck/pay", async (req, res) => {
 });
 
 app.post("/api/config/nexio/recurring/pay", async (req, res) => {
+	console.log(typeof req.body.intervalAmount);
 	const options = {
 		method: "POST",
 		headers: {
@@ -373,7 +374,7 @@ app.post("/api/config/nexio/recurring/pay", async (req, res) => {
 					currency: "USD",
 					customer: { customerRef: req.body.id },
 					paymentMethod: "card",
-					amount: req.body.totalPrice,
+					amount: Number(req.body.intervalAmount),
 				},
 				tokenex: { token: req.body.token },
 				isAuthOnly: false,
@@ -384,7 +385,11 @@ app.post("/api/config/nexio/recurring/pay", async (req, res) => {
 					verboseResponse: false,
 				},
 			},
-			schedule: { interval: "month", intervalCount: req.body.month },
+			schedule: {
+				interval: "day",
+				intervalCount: req.body.month,
+				balance: req.body.totalPrice,
+			},
 		}),
 	};
 

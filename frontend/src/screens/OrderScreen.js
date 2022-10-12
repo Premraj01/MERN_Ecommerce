@@ -55,6 +55,7 @@ const OrderScreen = ({ match, history }) => {
 	const [token, setToken] = useState("");
 	const [variant, setVariant] = useState("");
 	const [message, setMessage] = useState("");
+	const [intervalAmount, setIntervalAmount] = useState(0);
 
 	const dispatch = useDispatch();
 
@@ -180,6 +181,7 @@ const OrderScreen = ({ match, history }) => {
 				token: user.savedCardToken,
 				id: user._id,
 				totalPrice: order.totalPrice,
+				intervalAmount: intervalAmount,
 				month: month,
 			},
 			config,
@@ -579,7 +581,7 @@ const OrderScreen = ({ match, history }) => {
 																		setEmail(e.target.value)
 																	}></Text>
 															</Form.Group> */}
-															<hr />
+
 															<h5>Card</h5>
 															<h6>**** {card?.tokenex?.lastFour}</h6>
 
@@ -625,7 +627,7 @@ const OrderScreen = ({ match, history }) => {
 															type='submit'
 															variant='primary'
 															onClick={payWithSavedCard}>
-															Login
+															Pay
 														</Button>
 													</Fragment>
 												) : action === NEXIO_CONSTANTS.RECURRING_PAYMENT ? (
@@ -642,26 +644,37 @@ const OrderScreen = ({ match, history }) => {
 																	placeholder='Enter the CVV'></Form.Control>
 															</Form.Group>
 															<hr />
+															<Form.Group controlId='CVV'>
+																<Form.Label>Amount</Form.Label>
+																<Form.Control
+																	type='number'
+																	value={intervalAmount}
+																	onChange={(e) => {
+																		setIntervalAmount(e.target.value);
+																	}}
+																	placeholder='Choose amount'></Form.Control>
+															</Form.Group>
+
 															<Form.Group controlId='recurring'>
 																<Form.Label>
-																	Choose Interval(in months)
+																	Choose Interval(in days)
 																</Form.Label>
 																<div>
 																	<Form.Control
 																		as='select'
 																		value={month}
 																		onChange={(e) => setMonth(e.target.value)}>
+																		<option key={1} value={1}>
+																			1
+																		</option>
+																		<option key={2} value={2}>
+																			2
+																		</option>
 																		<option key={3} value={3}>
 																			3
 																		</option>
-																		<option key={6} value={6}>
-																			6
-																		</option>
-																		<option key={9} value={9}>
-																			9
-																		</option>
-																		<option key={12} value={12}>
-																			12
+																		<option key={15} value={15}>
+																			15
 																		</option>
 																	</Form.Control>
 																</div>
