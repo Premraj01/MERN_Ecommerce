@@ -13,13 +13,20 @@ import {
   ORDER_PAY_RESET,
   ORDER_DELIVER_RESET,
 } from "../constants/orderConstants";
+import ToastContainer from "react-bootstrap/ToastContainer";
+import Toast from "react-bootstrap/Toast";
 
 const OrderScreen = ({ match, history }) => {
   const orderId = match.params.id;
 
   const [sdkReady, setSdkReady] = useState(false);
 
-  const [url, setUrl] = useState("");
+  const [iframeUrl, setIFrameUrl] = useState("");
+  const [expressIframeUrl, setExpressIFrameUrl] = useState("");
+
+  const [showModal, setShowModal] = useState(false);
+
+  const [errorMessage, setErorMessage] = useState("");
 
   const dispatch = useDispatch();
 
@@ -34,6 +41,8 @@ const OrderScreen = ({ match, history }) => {
 
   const orderDeliver = useSelector((state) => state.orderDeliver);
   const { loading: loadingDeliver, success: successDeliver } = orderDeliver;
+
+  const toggleShowModal = () => setShowModal(!showModal);
 
   if (!loading) {
     // Calculate Prices
@@ -75,7 +84,7 @@ const OrderScreen = ({ match, history }) => {
       // } else {
       //   setSdkReady(true);
       // }
-      getApmOneTimeToken();
+      getIframes();
     }
   }, [dispatch, orderId, order, successPay, successDeliver, history, userInfo]);
 
@@ -87,15 +96,29 @@ const OrderScreen = ({ match, history }) => {
     dispatch(deliverOrder(order));
   };
 
-  const getApmOneTimeToken = async () => {
-    console.log("getApmOneTimeToken");
-    const { data: token } = await axios.get("api/nexio/token");
-    console.log(token);
-    if (token.buttonIFrameUrls.length > 0) {
-      setSdkReady(true);
-      setUrl(token.buttonIFrameUrls[0].url);
-      // buttonIFrameUrls[0].url
+  const hasError = (error) => {
+    console.log(error);
+    if (JSON.stringify(error).includes("error")) {
+      setShowModal(true);
+      setErorMessage(error.message);
+      console.log(error.message);
     }
+  };
+
+  const getIframes = async () => {
+    const { data: iframeToken } = await axios.get("/api/nexio/apm_token");
+    const { data: expressIframeToken } = await axios.get(
+      "/api/nexio/express_apm_token"
+    );
+
+    // const { data: token } = await axios.get("/api/nexio/recurring");
+    console.log(iframeToken, expressIframeToken);
+    hasError(iframeToken);
+    hasError(expressIframeToken);
+
+    setSdkReady(true);
+    setIFrameUrl(iframeToken.expressIFrameUrl);
+    setExpressIFrameUrl(expressIframeToken.expressIFrameUrl);
   };
 
   return loading ? (
@@ -105,6 +128,29 @@ const OrderScreen = ({ match, history }) => {
   ) : (
     <>
       <h1>Order {order._id}</h1>
+
+      {!showModal ? null : (
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="bg-dark position-relative"
+          style={{ minHeight: "130px", maxWidth: "260px" }}
+        >
+          <ToastContainer position="middle-center" className="p-3">
+            <Toast
+              className="d-inline-block m-1"
+              show={showModal}
+              onClose={toggleShowModal}
+            >
+              <Toast.Header>
+                <strong className="me-auto">Error </strong>
+              </Toast.Header>
+              <Toast.Body>{errorMessage}</Toast.Body>
+            </Toast>
+          </ToastContainer>
+        </div>
+      )}
+
       <Row>
         <Col md={8}>
           <ListGroup variant="flush">
@@ -216,19 +262,20 @@ const OrderScreen = ({ match, history }) => {
                   </Col>
                 </Row>
               </ListGroup.Item>
-
+              <label>{iframeUrl}</label>
               {!order.isPaid && (
                 <ListGroup.Item>
                   {loadingPay && <Loader />}
                   {!sdkReady ? (
                     <Loader />
                   ) : (
-                    // <PayPalButton
-                    //   amount={order.totalPrice}
-                    //   onSuccess={successPaymentHandler}
-                    // />
-
-                    <iframe id="myIframe" src=""></iframe>
+                    <div>
+                      <iframe id="myIframe" src={iframeUrl}></iframe>
+                      <iframe
+                        id="myExpressIframe"
+                        src={expressIframeUrl}
+                      ></iframe>
+                    </div>
                   )}
                 </ListGroup.Item>
               )}

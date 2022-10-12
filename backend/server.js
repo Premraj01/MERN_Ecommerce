@@ -35,7 +35,7 @@ app.get("/api/config/paypal", (req, res) => {
   res.send(process.env.PAYPAL_CLIENT_ID);
 });
 
-app.get("/api/nexio/token", (req, res) => {
+app.get("/api/nexio/apm_token", (req, res) => {
   let data = process.env.MERCHANT_USERNAME_PASSWORD;
   let buff = new Buffer.from(data);
   let base64data = buff.toString("base64");
@@ -48,14 +48,62 @@ app.get("/api/nexio/token", (req, res) => {
       accept: "application/json",
       "content-type": "application/json",
       authorization: "Basic " + base64data,
-      // authorization:
-      //   "Basic cmFraGkuYXdhcmlAaW5ub3ZlY3QuY29tOjk4NjA4NTYzMjlAU2FuZGJveA==",
     },
     body: JSON.stringify({
-      isAuthOnly: true,
+      isAuthOnly: false,
       data: {
         currency: "USD",
         paymentMethod: "googlePayCyberSource",
+        amount: 32,
+        customer: {
+          firstName: "John",
+          lastName: "Doe",
+          email: "jdoe@example.com",
+          customerRef: "767jhgj",
+          orderNumber: "Skds86sd65ds7",
+          customerRef: "ehdj",
+          billToAddressOne: "2147 West Silverlake Drive",
+          billToCity: "Scranton",
+          billToState: "PA",
+          billToPostal: "18503",
+          billToCountry: "US",
+        },
+      },
+      processingOptions: {
+        merchantId: "301310",
+        paymentOptionTag: null,
+        saveRecurringToken: true,
+      },
+    }),
+  };
+  console.log(options);
+  fetch(process.env.APM_TOKEN, options)
+    .then((response) => response.json())
+    .then((response) => {
+      console.log(response);
+      res.send(response);
+    })
+    .catch((err) => console.error("err", err));
+});
+
+app.get("/api/nexio/express_apm_token", (req, res) => {
+  let data = process.env.MERCHANT_USERNAME_PASSWORD;
+  let buff = new Buffer.from(data);
+  let base64data = buff.toString("base64");
+
+  console.log('"' + data + '" converted to Base64 is "' + base64data + '"');
+
+  const options = {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      authorization: "Basic " + base64data,
+    },
+    body: JSON.stringify({
+      isAuthOnly: false,
+      data: {
+        currency: "USD",
         amount: 32,
         customer: {
           firstName: "John",
@@ -70,32 +118,61 @@ app.get("/api/nexio/token", (req, res) => {
         },
       },
       processingOptions: {
-        checkFraud: true,
-        verboseResponse: false,
-        verifyAvs: 0,
-        verifyCvc: false,
         merchantId: "301310",
-      },
-      shouldUpdateCard: true,
-      uiOptions: {
-        displaySubmitButton: false,
-        hideBilling: {
-          hideAddressOne: false,
-          hideAddressTwo: false,
-          hideCity: false,
-          hideCountry: false,
-          hidePostal: false,
-          hidePhone: true,
-          hideState: false,
-        },
-        hideCvc: false,
-        requireCvc: true,
-        forceExpirationSelection: true,
+        paymentOptionTag: null,
+        saveRecurringToken: false,
       },
     }),
   };
   console.log(options);
-  fetch(process.env.ONE_TIME_TOKEN, options)
+  fetch(process.env.APM_TOKEN, options)
+    .then((response) => response.json())
+    .then((response) => {
+      console.log(response);
+      // if (JSON.stringify(response).includes("error")) {
+      //   console.log("error");
+      //   throw new Error(response);
+      // }
+      res.send(response);
+    })
+    .catch((err) => console.error("err", err));
+});
+
+app.get("/api/nexio/recurring", (req, res) => {
+  let data = process.env.MERCHANT_USERNAME_PASSWORD;
+  let buff = new Buffer.from(data);
+  let base64data = buff.toString("base64");
+
+  console.log('"' + data + '" converted to Base64 is "' + base64data + '"');
+
+  const options = {
+    method: "POST",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      authorization: "Basic " + base64data,
+    },
+    body: JSON.stringify({
+      payment: {
+        data: {
+          amount: 19.99,
+          currency: "USD",
+          customer: {
+            customerRef: "RP006",
+          },
+        },
+        tokenex: {
+          token: "589b568a-f641-4c56-85c3-1ee322a94d56",
+        },
+      },
+      schedule: {
+        interval: "day",
+        intervalCount: 2,
+      },
+    }),
+  };
+  console.log(options);
+  fetch(process.env.RECURRING, options)
     .then((response) => response.json())
     .then((response) => {
       console.log(response);
