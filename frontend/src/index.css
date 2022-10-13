@@ -71,6 +71,14 @@ iframe {
   display: block;
 }
 
+.bold-italic{
+  margin: 0;
+  font-weight: 900;
+  font-style: italic;
+}
+
 .iframe-container {
   border: 2px solid black;
 }
+
+/* <------------------STRIPE------------------> */

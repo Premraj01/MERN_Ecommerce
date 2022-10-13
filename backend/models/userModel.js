@@ -29,6 +29,12 @@ const userSchema = mongoose.Schema(
 		savedEcheckToken: {
 			type: String,
 		},
+		savedTokenSubscription: {
+			type: String,
+		},
+		savedTokenPayplan: {
+			type: String,
+		},
 		isAdmin: {
 			type: Boolean,
 			required: true,

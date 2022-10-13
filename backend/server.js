@@ -8,9 +8,12 @@ import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
-import axios from "axios";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const stripe = require("stripe")(
+	"sk_test_51LsBoqSHQviIx7YxwZgkEbatgR56YrhvCry9Ov4QPbpflV38z1ELbLhfkl8YEVISVBeWIKnrs1hssOJDELzIsjTK00wMpRB0UN",
+);
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
-// const sdk = require("api")("@nexio/v99#la7fncsl74uhkh4");
 import sdk from "api";
 
 dotenv.config();
@@ -360,6 +363,24 @@ app.post("/api/config/nexio/save-echeck/pay", async (req, res) => {
 
 app.post("/api/config/nexio/recurring/pay", async (req, res) => {
 	console.log(typeof req.body.intervalAmount);
+
+	let schedule, recurringType;
+
+	if (req.body.totalPrice === -1) {
+		recurringType = "subscription";
+		schedule = {
+			interval: "day",
+			intervalCount: req.body.month,
+		};
+	} else {
+		recurringType = "payplan";
+		schedule = {
+			interval: "day",
+			intervalCount: req.body.month,
+			balance: req.body.totalPrice,
+		};
+	}
+
 	const options = {
 		method: "POST",
 		headers: {
@@ -386,18 +407,45 @@ app.post("/api/config/nexio/recurring/pay", async (req, res) => {
 				},
 			},
 			schedule: {
-				interval: "day",
-				intervalCount: req.body.month,
-				balance: req.body.totalPrice,
+				...schedule,
 			},
 		}),
 	};
 
 	fetch(process.env.BASE_SUBSCRIPTION_URL, options)
 		.then((response) => response.json())
-		.then((response) => res.send(response))
+		.then((response) => {
+			res.send(response);
+		})
 		.catch((err) => console.error(err));
 });
+
+//<-------------------------------STRIPE------------------------>
+
+app.post("/api/config/stripe/create-payment-intent", async (req, res) => {
+	const { items } = req.body;
+
+	// Create a PaymentIntent with the order amount and currency
+	const paymentIntent = await stripe.paymentIntents.create({
+		amount: calculateOrderAmount(items),
+		currency: "usd",
+		automatic_payment_methods: {
+			enabled: true,
+		},
+		description: "Software development services",
+	});
+
+	res.send({
+		clientSecret: paymentIntent.client_secret,
+	});
+});
+
+const calculateOrderAmount = (items) => {
+	// Replace this constant with a calculation of the order's amount
+	// Calculate the order total on the server to prevent
+	// people from directly manipulating the amount on the client
+	return 1400;
+};
 
 const __dirname = path.resolve();
 app.use("/uploads", express.static(path.join(__dirname, "/uploads")));

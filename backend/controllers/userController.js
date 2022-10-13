@@ -96,6 +96,10 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 		user.email = req.body.email || user.email;
 		user.savedCardToken = req.body.savedCardToken || user.savedCardToken;
 		user.savedEcheckToken = req.body.savedEcheckToken || user.savedEcheckToken;
+		user.savedTokenSubscription =
+			req.body.savedTokenSubscription || user.savedTokenSubscription;
+		user.savedTokenPayplan =
+			req.body.savedTokenPayplan || user.savedTokenPayplan;
 		if (req.body.password) {
 			user.password = req.body.password || user.password;
 		}
@@ -110,6 +114,8 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 			isAdmin: updatedUser.isAdmin,
 			savedCardToken: user.savedCardToken,
 			savedEcheckToken: user.savedEcheckToken,
+			savedTokenSubscription: user.savedTokenSubscription,
+			savedTokenPayplan: user.savedTokenPayplan,
 			token: generateToken(updatedUser._id),
 		});
 	} else {
