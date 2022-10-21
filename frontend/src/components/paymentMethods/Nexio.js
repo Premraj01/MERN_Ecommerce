@@ -15,7 +15,7 @@ import {
 	Tabs,
 	Tab,
 } from "react-bootstrap";
-import Accordion from "react-bootstrap/Accordion";
+import { GrFormClose } from "react-icons/gr";
 import { useDispatch, useSelector } from "react-redux";
 import { NEXIO_CONSTANTS } from "../../constants/paymentConstants";
 import { update } from "../../actions/userActions";
@@ -242,6 +242,8 @@ const Nexio = ({ order, user, orderId, userInfo, orderPaidSuccess }) => {
 		let paymentResultObj = {
 			orderId: orderId,
 			paymentResult: paymentResult,
+			variant: variant,
+			message: message,
 		};
 		// setPaymentResult({ ...paymentResultObj });
 		orderPaidSuccess(paymentResultObj);
@@ -356,13 +358,6 @@ const Nexio = ({ order, user, orderId, userInfo, orderPaidSuccess }) => {
 				// 	onSuccess={successPaymentHandler}
 				// />
 				<Fragment>
-					<Button
-						type='button'
-						className='btn btn-block'
-						onClick={getRecurringPaymentForm}>
-						Recurring Payment
-					</Button>
-					<hr />
 					<Container>
 						<Row className='justify-content-md-center'>
 							<Col cs={12} md={6}>
@@ -417,44 +412,44 @@ const Nexio = ({ order, user, orderId, userInfo, orderPaidSuccess }) => {
 						onClick={payWithSavedEcheck}>
 						Pay with Saved the E-check
 					</Button>
+					<hr />
+					<Container>
+						<Row className='justify-content-md-center'>
+							<Col cs={12} md={6}>
+								<h5>Recurring</h5>
+							</Col>
+						</Row>
+					</Container>
+					<Button
+						type='button'
+						className='btn btn-block'
+						onClick={getRecurringPaymentForm}>
+						Recurring Payment
+					</Button>
 
 					<ReactModal
 						isOpen={isOpenModal}
 						onRequestClose={closeModal}
 						style={customStyles}>
 						<Row>
-							<Col
-								md={{
-									span: 4,
-									offset: 7,
-								}}>
+							<Col md={9}></Col>
+							<Col md={3}>
 								<Button variant='secondary' onClick={closeModal}>
-									close
+									<GrFormClose size={30} />
 								</Button>
 							</Col>
 						</Row>
 
-						<hr />
-
 						{action === NEXIO_CONSTANTS.PAY_WITH_SAVE_CARD ? (
 							<Fragment>
 								<Form>
-									{/* <Form.Group controlId='card'>
-																<Form.Label>Card</Form.Label>
-																<Text
-																	type='card'
-																	placeholder='Enter the Email'
-																	value={email}
-																	onChange={(e) =>
-																		setEmail(e.target.value)
-																	}></Text>
-															</Form.Group> */}
-
-									<h5>Card</h5>
-									<h6>**** {card?.tokenex?.lastFour}</h6>
+									<Form.Label>Saved Card</Form.Label>
+									<br />
+									<Form.Label className='m-3'>
+										**** {card?.tokenex?.lastFour}
+									</Form.Label>
 
 									<Form.Group controlId='CVV'>
-										<Form.Label>CVV</Form.Label>
 										<Form.Control
 											type='CVV'
 											placeholder='Enter the CVV'></Form.Control>
@@ -470,10 +465,11 @@ const Nexio = ({ order, user, orderId, userInfo, orderPaidSuccess }) => {
 						) : action === NEXIO_CONSTANTS.PAY_WITH_SAVE_ECHECK ? (
 							<Fragment>
 								<Form>
-									<hr />
-									<h5>Card</h5>
-									<h6>**** {card?.tokenex?.lastFour}</h6>
-									<hr />
+									<Form.Label>Saved Card</Form.Label>
+									<br />
+									<Form.Label className='m-3'>
+										**** {card?.tokenex?.lastFour}
+									</Form.Label>
 									<Form.Group controlId='CVV'>
 										<Form.Label>CVV</Form.Label>
 										<Form.Control
@@ -484,7 +480,7 @@ const Nexio = ({ order, user, orderId, userInfo, orderPaidSuccess }) => {
 								<Button
 									type='submit'
 									variant='primary'
-									onClick={payWithSavedCard}>
+									onClick={payWithSavedEcheck}>
 									Pay
 								</Button>
 							</Fragment>
@@ -494,15 +490,17 @@ const Nexio = ({ order, user, orderId, userInfo, orderPaidSuccess }) => {
 									defaultActiveKey='subscription'
 									id='uncontrolled-tab-example'
 									fill>
-									<Tab eventKey='subscription' title='subscription'>
-										<Form className='mt-5'>
+									<Tab eventKey='subscription' title='Subscription'>
+										<Form>
 											<Form.Group controlId='CVV'>
-												<Form.Label>**** {card?.tokenex?.lastFour}</Form.Label>
+												<Form.Label className='m-3 mt-5'>
+													**** {card?.tokenex?.lastFour}
+												</Form.Label>
 												<Form.Control
 													type='CVV'
 													placeholder='Enter the CVV'></Form.Control>
 											</Form.Group>
-											<hr />
+
 											<Form.Group controlId='CVV'>
 												<Form.Label>
 													Amount of{" "}

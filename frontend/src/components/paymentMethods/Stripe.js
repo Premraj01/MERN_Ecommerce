@@ -4,11 +4,12 @@ import {
 	useStripe,
 	useElements,
 } from "@stripe/react-stripe-js";
-import { Button } from "react-bootstrap";
+import { Button, Col, Row } from "react-bootstrap";
 import ReactModal from "react-modal";
+import { GrFormClose } from "react-icons/gr";
 import "./stripe.css";
 
-const Stripe = () => {
+const Stripe = ({ order }) => {
 	const customStyles = {
 		content: {
 			top: "50%",
@@ -72,7 +73,7 @@ const Stripe = () => {
 			elements,
 			confirmParams: {
 				// Make sure to change this to your payment completion page
-				return_url: "http://localhost:3000",
+				return_url: `http://localhost:3000/order/${order._id}`,
 			},
 		});
 
@@ -97,32 +98,27 @@ const Stripe = () => {
 		openModal();
 	};
 
+	const closeModal = () => {
+		setIsOpenModal(false);
+	};
+
 	return (
-		<>
-			<Button
-				type='button'
-				className='btn btn-block'
-				variant='outline-dark'
-				onClick={loadPaymentPage}>
-				Save the E-check
-			</Button>
-			<ReactModal isOpen={isOpenModal} style={customStyles} className='stripe'>
-				<form id='payment-form' onSubmit={handleSubmit}>
-					<PaymentElement id='payment-element' />
-					<button disabled={isLoading || !stripe || !elements} id='submit'>
-						<span id='button-text'>
-							{isLoading ? (
-								<div className='spinner' id='spinner'></div>
-							) : (
-								"Pay now"
-							)}
-						</span>
-					</button>
-					{/* Show any error or success messages */}
-					{message && <div id='payment-message'>{message}</div>}
-				</form>
-			</ReactModal>
-		</>
+		<div className='stripe'>
+			<form id='payment-form' onSubmit={handleSubmit}>
+				<PaymentElement id='payment-element' />
+				<button disabled={isLoading || !stripe || !elements} id='submit'>
+					<span id='button-text'>
+						{isLoading ? (
+							<div className='spinner' id='spinner'></div>
+						) : (
+							"Pay now"
+						)}
+					</span>
+				</button>
+				{/* Show any error or success messages */}
+				{message && <div id='payment-message'>{message}</div>}
+			</form>
+		</div>
 	);
 };
 

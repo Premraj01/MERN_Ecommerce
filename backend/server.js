@@ -8,13 +8,14 @@ import productRoutes from "./routes/productRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import orderRoutes from "./routes/orderRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import fetch from "node-fetch";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
+
 const stripe = require("stripe")(
-	"sk_test_51LsBoqSHQviIx7YxwZgkEbatgR56YrhvCry9Ov4QPbpflV38z1ELbLhfkl8YEVISVBeWIKnrs1hssOJDELzIsjTK00wMpRB0UN",
+	"sk_test_51LsKaqITPQLRyiLUjA1cYugZXBh63MAg4LNaUlgIAsYqp1Nu0vkmcOzhNS0NiktzGNoaK2WMdZ6uTjhKMRSQxU5k00r34lKGDP",
 );
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
-import sdk from "api";
 
 dotenv.config();
 connectDB();
@@ -52,8 +53,8 @@ app.post("/api/config/nexio/card-iframe", (req, res) => {
 			data: {
 				currency: "USD",
 				amount: req.body.totalPrice,
-				paymentMethod: "creditCard",
-				allowedCardTypes: ["visa", "mastercard", "jcb", "discover", "amex"],
+				// paymentMethod: "creditCard",
+				// allowedCardTypes: ["visa", "mastercard", "jcb", "discover", "amex"],
 			},
 			processingOptions: {
 				checkFraud: true,
@@ -71,6 +72,8 @@ app.post("/api/config/nexio/card-iframe", (req, res) => {
 			},
 		}),
 	};
+
+	console.log("object");
 
 	fetch(process.env.BASE_IFRAME_URL + "token", options)
 		.then((response) => response.json())
@@ -183,6 +186,29 @@ app.post("/api/config/nexio/save-card/pay", async (req, res) => {
 		}),
 	};
 
+	const webhookOptions = {
+		method: "POST",
+		headers: {
+			accept: "application/json",
+			"content-type": "application/json",
+			authorization:
+				"Basic cHJlbXJhanRyaXB1dGUxMkBnbWFpbC5jb206UHJlbXJhal9UcmlwdXRlQDEy",
+		},
+		body: JSON.stringify({
+			webhooks: {
+				CARD_SAVED: {
+					url: "https://192.168.1.5:5000/notification",
+				},
+			},
+			merchantId: "301308",
+		}),
+	};
+
+	fetch("https://api.nexiopaysandbox.com/webhook/v3/config", webhookOptions)
+		.then((response) => response.json())
+		.then((response) => console.log(response))
+		.catch((err) => console.error(err));
+
 	fetch(process.env.BASE_IFRAME_URL + "process", options)
 		.then((response) => response.json())
 		.then((response) => res.send(response))
@@ -206,8 +232,8 @@ app.get("/api/config/nexio/save-card-iframe", async (req, res) => {
 		body: JSON.stringify({
 			data: {
 				currency: "USD",
-				paymentMethod: "creditCard",
-				allowedCardTypes: ["visa", "mastercard", "jcb", "discover", "amex"],
+				// paymentMethod: "creditCard",
+				// allowedCardTypes: ["visa", "mastercard", "jcb", "discover", "amex"],
 			},
 			processingOptions: {
 				checkFraud: true,
@@ -420,32 +446,30 @@ app.post("/api/config/nexio/recurring/pay", async (req, res) => {
 		.catch((err) => console.error(err));
 });
 
+app.post("/notification", async (req, res) => {
+	console.log(res);
+});
+
 //<-------------------------------STRIPE------------------------>
 
 app.post("/api/config/stripe/create-payment-intent", async (req, res) => {
-	const { items } = req.body;
+	console.log(req.body.order.totalPrice);
 
-	// Create a PaymentIntent with the order amount and currency
 	const paymentIntent = await stripe.paymentIntents.create({
-		amount: calculateOrderAmount(items),
+		amount: req.body.order.totalPrice,
+		customer: req.body.stripeCustomer.id,
 		currency: "usd",
 		automatic_payment_methods: {
 			enabled: true,
 		},
 		description: "Software development services",
+		setup_future_usage: "off_session",
 	});
 
-	res.send({
-		clientSecret: paymentIntent.client_secret,
-	});
+	res.json({ client_secret: paymentIntent.client_secret });
 });
 
-const calculateOrderAmount = (items) => {
-	// Replace this constant with a calculation of the order's amount
-	// Calculate the order total on the server to prevent
-	// people from directly manipulating the amount on the client
-	return 1400;
-};
+// cus_MdbhKYLB9MHyjc
 
 const __dirname = path.resolve();
 app.use("/uploads", express.static(path.join(__dirname, "/uploads")));

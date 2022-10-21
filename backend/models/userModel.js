@@ -35,6 +35,9 @@ const userSchema = mongoose.Schema(
 		savedTokenPayplan: {
 			type: String,
 		},
+		stripeCustomer: {
+			type: Object,
+		},
 		isAdmin: {
 			type: Boolean,
 			required: true,

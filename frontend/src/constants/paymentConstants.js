@@ -10,4 +10,6 @@ export const NEXIO_CONSTANTS = {
 	RECURRING_PAYMENT_SUBSCRIPTION: "recurring_payment_subscription",
 	RECURRING_PAYMENT: "recurring_payment",
 	RECURRING_PAYMENT_PAYPLAN: "recurring_payment_payplan",
+	STRIPE_CLIENT_SECRET:
+		"pk_test_51LsKaqITPQLRyiLUN7At9Jumb5NKNWFlil6XRHkuDTvbrSBrtI7ycJQYAGWmzCdCX37YZ4HjeQr3KWbzDoxInlkG00DmW0TNzk",
 };

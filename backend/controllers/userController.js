@@ -3,6 +3,11 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/userModel.js";
 import generateToken from "../utils/generateToken.js";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const stripe = require("stripe")(
+	"sk_test_51LsKaqITPQLRyiLUjA1cYugZXBh63MAg4LNaUlgIAsYqp1Nu0vkmcOzhNS0NiktzGNoaK2WMdZ6uTjhKMRSQxU5k00r34lKGDP",
+);
 
 //@desc Auth user & get token
 //@route POST /api/users/login
@@ -20,6 +25,7 @@ const authUser = asyncHandler(async (req, res) => {
 			lname: user.lname,
 			email: user.email,
 			isAdmin: user.isAdmin,
+			stripeCustomer: user.stripeCustomer,
 			token: generateToken(user._id),
 		});
 	} else {
@@ -41,11 +47,13 @@ const registerUser = asyncHandler(async (req, res) => {
 		res.status(400);
 		throw new Error("User already exists");
 	}
+	const customer = await stripe.customers.create();
 	const user = await User.create({
 		fname,
 		lname,
 		email,
 		password,
+		stripeCustomer: customer,
 	});
 	if (user) {
 		res.status(201).json({
@@ -53,6 +61,7 @@ const registerUser = asyncHandler(async (req, res) => {
 			fname: user.fname,
 			lname: user.lname,
 			email: user.email,
+			stripeCustomer: user.stripeCustomer,
 			isAdmin: user.isAdmin,
 			token: generateToken(user._id),
 		});
@@ -76,6 +85,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 			email: user.email,
 			savedCardToken: user.savedCardToken,
 			savedEcheckToken: user.savedEcheckToken,
+			stripeCustomer: user.stripeCustomer,
 			isAdmin: user.isAdmin,
 		});
 	} else {

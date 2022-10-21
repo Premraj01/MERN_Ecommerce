@@ -19,9 +19,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
 const OrderScreen = ({ match, history }) => {
-	const stripePromise = loadStripe(
-		"pk_test_51LsBoqSHQviIx7YxymuZcqVAqRTRrWeuvfEBnxFOnZRK6Zfqxp1xlfbJTrMYAZ6XGJERwi9kPCJ1rDMursomdofA00S5dkR4QN",
-	);
+	const stripePromise = loadStripe(NEXIO_CONSTANTS.STRIPE_CLIENT_SECRET);
 
 	const orderId = match.params.id;
 	const dispatch = useDispatch();
@@ -60,7 +58,10 @@ const OrderScreen = ({ match, history }) => {
 			fetch("/api/config/stripe/create-payment-intent", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ items: [{ id: "xl-tshirt" }] }),
+				body: JSON.stringify({
+					order: order,
+					stripeCustomer: user.stripeCustomer,
+				}),
 			})
 				.then((res) => res.json())
 				.then((data) => setClientSecret(data.clientSecret));
@@ -68,7 +69,7 @@ const OrderScreen = ({ match, history }) => {
 	}, [dispatch, orderId, order, successPay, successDeliver, history, userInfo]);
 
 	const appearance = {
-		theme: "stripe",
+		theme: "night",
 	};
 	const options = {
 		clientSecret,
@@ -76,6 +77,8 @@ const OrderScreen = ({ match, history }) => {
 	};
 
 	const orderSuccessHandler = (paymentObject) => {
+		setVariant(paymentObject.variant);
+		setMessage(paymentObject.message);
 		dispatch(payOrder(paymentObject.orderId, paymentObject.paymentResult));
 	};
 
@@ -184,7 +187,7 @@ const OrderScreen = ({ match, history }) => {
 								) : (
 									clientSecret && (
 										<Elements options={options} stripe={stripePromise}>
-											<Stripe />
+											<Stripe order={order} />
 										</Elements>
 									)
 								))}
